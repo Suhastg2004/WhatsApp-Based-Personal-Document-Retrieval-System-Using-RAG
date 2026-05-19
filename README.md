@@ -1,9 +1,9 @@
-# Personal Document RAG System (Simple SQLite Version)
+# Personal Document RAG System (Chroma Version)
 
 This project provides the complete backend pipeline for:
 - Document parsing (PDF, image OCR, TXT, MD, DOCX)
 - Chunking and embedding generation
-- Local vector storage and retrieval using SQLite
+- Local vector storage and retrieval using Chroma
 - RAG query API that returns answers with source chunks
 
 The WhatsApp integration layer is intentionally excluded.
@@ -14,14 +14,14 @@ The WhatsApp integration layer is intentionally excluded.
 2. Parse content using PDF extraction, OCR, and document readers
 3. Chunk text into retrieval units
 4. Create embeddings using Sentence Transformers
-5. Store vectors in local SQLite database
+5. Store vectors in local Chroma database
 6. Query by natural language
 7. Retrieve top chunks and generate answer (Groq or extractive fallback)
 
 ## Tech Stack
 
 - FastAPI
-- SQLite (local file database)
+- Chroma (local persistent vector DB)
 - Sentence Transformers (all-MiniLM-L6-v2)
 - Groq API (optional)
 - PyMuPDF, pytesseract, python-docx
@@ -30,6 +30,7 @@ The WhatsApp integration layer is intentionally excluded.
 
 - Python 3.11+
 - **Tesseract OCR installed on machine (REQUIRED for image/PDF parsing)**
+- **Windows only:** Microsoft C++ Build Tools (required to build `chroma-hnswlib`)
 
 ### Install Tesseract on Windows (IMPORTANT)
 
@@ -83,13 +84,14 @@ Copy-Item .env.example .env
 4. Run API:
 
 ```powershell
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+python -m uvicorn app.api.app:app --host 127.0.0.1 --port 8000
 ```
 
    Note: Use `127.0.0.1` instead of `0.0.0.0` to avoid reload issues on Windows.
 
 5. Open browser:
 
+- UI: http://127.0.0.1:8000/
 - Swagger API: http://127.0.0.1:8000/docs
 
 ## One-Command Run (Windows)
@@ -174,7 +176,7 @@ Restart server after env changes.
 1. Stop server (Ctrl+C)
 2. Run without reload flag:
    ```cmd
-   python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+   python -m uvicorn app.api.app:app --host 127.0.0.1 --port 8000
    ```
 3. This avoids watching the venv folder, which causes excessive reloads.
 
@@ -187,7 +189,7 @@ Restart server after env changes.
 ## Notes
 
 - First run downloads the embedding model (~1.5 GB) and may take time.
-- Vectors are stored in local SQLite file set by SQLITE_DB_PATH in .env.
+- Vectors are stored in local Chroma persistence directory set by CHROMA_PERSIST_DIR in .env.
 - Extractive fallback returns highest-ranked chunk when Groq is not configured.
 - Default host is 127.0.0.1 (localhost) to avoid Windows file watcher issues.
 "# WhatsApp-Based-Personal-Document-Retrieval-System-Using-RAG" 

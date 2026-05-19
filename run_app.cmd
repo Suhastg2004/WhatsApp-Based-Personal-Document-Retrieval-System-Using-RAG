@@ -19,4 +19,4 @@ if not exist "%ROOT%.env" (
 )
 
 "%ROOT%major_project\Scripts\python.exe" -m pip install -r "%ROOT%requirements.txt"
-"%ROOT%major_project\Scripts\python.exe" -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+"%ROOT%major_project\Scripts\python.exe" -m uvicorn app.api.app:app --host 0.0.0.0 --port 8000 --reload

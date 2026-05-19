@@ -3,10 +3,10 @@ from uuid import uuid4
 
 from fastapi import UploadFile
 
-from app.services.chunker import chunk_text
-from app.services.document_parser import DocumentParser
-from app.services.embedder import EmbeddingService
-from app.services.simple_vector_store import SimpleVectorStore
+from app.services.embeddings import EmbeddingService
+from app.services.parsing import DocumentParser
+from app.storage.chroma_store import ChromaVectorStore
+from app.utils.chunker import chunk_text
 
 
 class IngestionService:
@@ -14,7 +14,7 @@ class IngestionService:
         self,
         parser: DocumentParser,
         embedder: EmbeddingService,
-        store: SimpleVectorStore,
+        store: ChromaVectorStore,
         upload_dir: Path,
         chunk_size: int,
         chunk_overlap: int,

@@ -19,6 +19,10 @@ class ParsedDocument:
 class DocumentParser:
     SUPPORTED_EXTENSIONS = {".pdf", ".txt", ".md", ".docx", ".png", ".jpg", ".jpeg", ".tif", ".tiff"}
 
+    def __init__(self, tesseract_cmd: str | None = None) -> None:
+        if tesseract_cmd:
+            pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+
     def parse_file(self, file_path: Path, document_id: str) -> ParsedDocument:
         suffix = file_path.suffix.lower()
         if suffix not in self.SUPPORTED_EXTENSIONS:

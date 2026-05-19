@@ -1,6 +1,6 @@
 from groq import Groq
 
-from app.services.simple_vector_store import RetrievedChunk
+from app.storage.chroma_store import RetrievedChunk
 
 
 class RAGEngine:

@@ -10,8 +10,9 @@ class Settings(BaseSettings):
     app_host: str = "0.0.0.0"
     app_port: int = 8000
 
-    sqlite_db_path: str = "rag_store.db"
-    sqlite_table_name: str = "document_chunks"
+    chroma_persist_dir: str = "chroma_data"
+    chroma_collection_name: str = "document_chunks"
+    chroma_telemetry: bool = False
 
     embedding_model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
     chunk_size: int = 800
@@ -22,6 +23,8 @@ class Settings(BaseSettings):
     generation_backend: str = "extractive"
     groq_api_key: str | None = None
     groq_model: str = "openai/gpt-oss-120b"
+
+    tesseract_cmd: str | None = None
 
 
 @lru_cache
