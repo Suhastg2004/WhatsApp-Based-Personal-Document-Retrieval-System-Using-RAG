@@ -1,193 +1,155 @@
-# Personal Document RAG System (Simple SQLite Version)
+# WhatsApp Personal Document Bot (Django + DRF + RAG)
 
-This project provides the complete backend pipeline for:
-- Document parsing (PDF, image OCR, TXT, MD, DOCX)
-- Chunking and embedding generation
-- Local vector storage and retrieval using SQLite
-- RAG query API that returns answers with source chunks
+A WhatsApp bot users join by scanning a QR code. They send any PDF, image,
+text, or DOCX into the chat, and later ask plain-English questions like
+"What is my PAN number?" or "What is my account number?" and the bot answers
+from the user's own documents only.
 
-The WhatsApp integration layer is intentionally excluded.
+The backend is Django + DRF, storage is SQLite, retrieval is sentence-transformers
+embeddings with cosine search, and generation uses Groq with an extractive
+fallback.
 
-## Architecture
+## Stack
 
-1. Upload documents to the API
-2. Parse content using PDF extraction, OCR, and document readers
-3. Chunk text into retrieval units
-4. Create embeddings using Sentence Transformers
-5. Store vectors in local SQLite database
-6. Query by natural language
-7. Retrieve top chunks and generate answer (Groq or extractive fallback)
+- Django 5 + Django REST Framework
+- SQLite (data + JSON-encoded vectors)
+- Twilio WhatsApp (Sandbox or production)
+- sentence-transformers `all-MiniLM-L6-v2`
+- PyMuPDF + python-docx + Tesseract OCR
+- Groq for generative answers (optional)
 
-## Tech Stack
+## Project layout
 
-- FastAPI
-- SQLite (local file database)
-- Sentence Transformers (all-MiniLM-L6-v2)
-- Groq API (optional)
-- PyMuPDF, pytesseract, python-docx
+```
+bot/
+├── config/                   # Django project (settings, urls, wsgi/asgi)
+├── core/                     # WhatsAppUser model
+├── documents/                # Document & Chunk models, parser, chunker, ingestion, REST
+├── rag/                      # Embedder, vector store, RAG engine, /api/query/
+├── messaging/                # Twilio webhook, dispatcher (commands), inbound log
+├── onboarding/               # QR code landing page
+├── templates/onboarding/     # landing.html
+├── manage.py
+├── requirements.txt
+└── .env.example
+```
 
 ## Prerequisites
 
 - Python 3.11+
-- **Tesseract OCR installed on machine (REQUIRED for image/PDF parsing)**
-
-### Install Tesseract on Windows (IMPORTANT)
-
-**This is mandatory.** Without it, image and scanned PDF ingestion will fail with HTTP 500.
-
-1. Download installer from:
-   https://github.com/UB-Mannheim/tesseract/wiki
-   
-   Latest stable: **v5.4.0 or later**
-
-2. Run installer and install to default path:
-   `C:\Program Files\Tesseract-OCR`
-
-3. After install, open a NEW CMD/PowerShell terminal.
-
-4. Verify installation:
-
-```cmd
-tesseract --version
-```
-
-If command not found, add to PATH:
-
-```cmd
-set PATH=C:\Program Files\Tesseract-OCR;%PATH%
-tesseract --version
-```
-
-5. If still not found, check your actual install path and replace in the command above.
+- **Tesseract OCR** installed and on `PATH`
+  - macOS: `brew install tesseract`
+  - Ubuntu/Debian: `sudo apt install tesseract-ocr`
+  - Windows: https://github.com/UB-Mannheim/tesseract/wiki (default path: `C:\Program Files\Tesseract-OCR`)
+- A Twilio account with WhatsApp Sandbox enabled (or a production WhatsApp sender)
+- (Optional) A Groq API key for generative answers
 
 ## Setup
 
-1. Activate your virtual environment (existing in this project):
-
-```powershell
-.\major_project\Scripts\Activate.ps1
-```
-
-2. Install dependencies:
-
-```powershell
+```bash
+python -m venv .venv
+source .venv/bin/activate                 # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+cp .env.example .env                      # then edit values
+python manage.py migrate
+python manage.py createsuperuser          # optional, for /admin/
+python manage.py runserver 127.0.0.1:8000
 ```
 
-3. Ensure environment file exists:
+First request that triggers an embedding will download the model (~90 MB for
+MiniLM, plus tokenizer files); be patient on the first call.
 
-```powershell
-Copy-Item .env.example .env
+## Configure Twilio
+
+1. In Twilio Console, open **Messaging → Try it out → Send a WhatsApp message**.
+2. Note your sandbox number (e.g. `whatsapp:+14155238886`) and join code (e.g. `join example-word`).
+3. In `.env` set:
+   ```
+   TWILIO_ACCOUNT_SID=ACxxxxxxxx
+   TWILIO_AUTH_TOKEN=xxxxxxxxxxxx
+   TWILIO_WHATSAPP_NUMBERS=whatsapp:+14155238886
+   TWILIO_SANDBOX_JOIN_CODE=join example-word
+   ```
+4. Expose your local server with ngrok:
+   ```bash
+   ngrok http 8000
+   ```
+   Copy the HTTPS URL into `.env` as `PUBLIC_BASE_URL=https://<id>.ngrok-free.app`.
+5. In the Sandbox settings set **WHEN A MESSAGE COMES IN** to:
+   ```
+   https://<id>.ngrok-free.app/webhook/whatsapp/
+   ```
+   Method: POST.
+6. Restart the server.
+
+## Onboarding
+
+Open `http://127.0.0.1:8000/` (or your public URL). The page shows a QR that
+encodes `https://wa.me/<picked_number>?text=<join code or hi>`. Multiple numbers
+in `TWILIO_WHATSAPP_NUMBERS` will be rotated daily.
+
+## Bot commands
+
+- Plain text → asked as a question against the user's own documents
+- Send a file or photo → indexed for that user
+- `/help` — show help
+- `/list` — list your documents
+- `/delete <id>` — delete one document
+- `/reset` — delete everything you uploaded
+
+## REST API (for testing without WhatsApp)
+
 ```
+GET  /api/documents/?wa_id=whatsapp:+91XXXXXXXXXX
+POST /api/documents/        multipart: wa_id, file
+DELETE /api/documents/<uuid>/?wa_id=whatsapp:+91XXXXXXXXXX
 
-4. Run API:
-
-```powershell
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
-
-   Note: Use `127.0.0.1` instead of `0.0.0.0` to avoid reload issues on Windows.
-
-5. Open browser:
-
-- Swagger API: http://127.0.0.1:8000/docs
-
-## One-Command Run (Windows)
-
-From project root, run either:
-
-```powershell
-.\run_app.ps1
-```
-
-or in cmd:
-
-```cmd
-run_app.cmd
-```
-
-Notes:
-- The script auto-installs dependencies.
-- The script auto-creates `.env` from `.env.example` if needed.
-- To skip dependency install in PowerShell:
-
-```powershell
-.\run_app.ps1 -SkipInstall
-```
-
-## API Endpoints
-
-- GET /health
-- POST /ingest/files
-  - Multipart upload with one or more files
-  - Supported: .pdf, .txt, .md, .docx, .png, .jpg, .jpeg, .tif, .tiff
-- POST /query
-  - Body:
-
-```json
+POST /api/query/
 {
+  "wa_id": "whatsapp:+91XXXXXXXXXX",
   "question": "What is my PAN number?",
   "top_k": 4
 }
 ```
 
-## Generation Modes
+## Generation backends
 
-### 1) Extractive mode (free, no API key)
+- `GENERATION_BACKEND=groq` + `GROQ_API_KEY=...` → LLM answers (recommended)
+- `GENERATION_BACKEND=extractive` → returns the top retrieved chunk verbatim, no API key needed
 
-Set in .env:
+## Handoff: implementing the RAG layer
 
-```env
-GENERATION_BACKEND=extractive
+The HTTP/WhatsApp side works without `sentence-transformers` or `groq`
+installed, so the API can be tested today. The RAG implementer only needs
+to honor the contract in `rag/services/interface.py`:
+
+- `rag.services.embedder.embed_texts` and `embed_query`
+- `rag.services.engine.answer_question`
+- `rag.services.vector_store.search_for_user`
+
+Until the embedder is online, ingestion still saves files and chunks but
+records `is_embedded=False`. To backfill once the model is wired up:
+
+```bash
+pip install sentence-transformers groq      # heavy ML deps
+python manage.py embed_pending --batch 64
 ```
 
-### 2) Groq mode (API key required)
+Querying without an embedder returns HTTP 503 with a clear message; the
+WhatsApp dispatcher returns a friendly fallback reply instead of crashing.
 
-Set in .env:
+## Privacy & isolation
 
-```env
-GENERATION_BACKEND=groq
-GROQ_API_KEY=your_key_here
-GROQ_MODEL=openai/gpt-oss-120b
-```
-
-Restart server after env changes.
-
-## Troubleshooting
-
-### "Ingestion failed: tesseract is not installed or it's not in your PATH"
-
-1. Verify Tesseract is installed:
-   ```cmd
-   tesseract --version
-   ```
-
-2. If not found, add to PATH manually:
-   ```cmd
-   set PATH=C:\Program Files\Tesseract-OCR;%PATH%
-   ```
-
-3. Restart your API server after fixing PATH.
-
-### Server reload loop / "localhost refused to connect"
-
-1. Stop server (Ctrl+C)
-2. Run without reload flag:
-   ```cmd
-   python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-   ```
-3. This avoids watching the venv folder, which causes excessive reloads.
-
-### Query returns weak/empty answers
-
-1. Upload a clearer document first (UTF-8 text, not scanned images).
-2. Ask questions using exact wording from the document.
-3. Check that ingest response shows chunks_indexed > 0.
+Every `Document` and `Chunk` is keyed to the WhatsApp user (`wa_id`). The
+vector store filters by `user_id` at query time, so users never see each
+other's data.
 
 ## Notes
 
-- First run downloads the embedding model (~1.5 GB) and may take time.
-- Vectors are stored in local SQLite file set by SQLITE_DB_PATH in .env.
-- Extractive fallback returns highest-ranked chunk when Groq is not configured.
-- Default host is 127.0.0.1 (localhost) to avoid Windows file watcher issues.
-"# WhatsApp-Based-Personal-Document-Retrieval-System-Using-RAG" 
+- Twilio limits a single WhatsApp reply to ~1600 chars; replies are trimmed.
+- Linear cosine search is fine for personal-scale data. If you outgrow SQLite,
+  switch the `vector_store` service to FAISS, Chroma, or `sqlite-vec`.
+- Inbound media is downloaded with the Twilio Account SID/Auth Token because
+  Twilio media URLs are private.
+- For production, set `TWILIO_VALIDATE_SIGNATURE=true` (default) and serve
+  over HTTPS; the webhook validates Twilio's `X-Twilio-Signature`.
