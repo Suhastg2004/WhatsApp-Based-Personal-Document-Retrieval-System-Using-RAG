@@ -1,0 +1,109 @@
+{
+  "timestamp": "2026-05-21 01:40:14",
+  "rag_service_url": "http://localhost:8001",
+  "processing": [
+    {
+      "name": "Ingestion Success Rate",
+      "value": 100.0,
+      "unit": "%"
+    },
+    {
+      "name": "Total Chunks Indexed",
+      "value": 3,
+      "unit": "chunks"
+    },
+    {
+      "name": "Avg Ingestion Time",
+      "value": 0.08130431175231934,
+      "unit": "seconds"
+    },
+    {
+      "name": "Documents Processed",
+      "value": 3,
+      "unit": "/3"
+    }
+  ],
+  "retrieval": [
+    {
+      "name": "Precision@4 (avg)",
+      "value": 50.0,
+      "unit": "%"
+    },
+    {
+      "name": "Recall@4 (avg)",
+      "value": 100.0,
+      "unit": "%"
+    },
+    {
+      "name": "Mean Reciprocal Rank (MRR)",
+      "value": 0.8666666666666666,
+      "unit": ""
+    },
+    {
+      "name": "Queries Evaluated",
+      "value": 10,
+      "unit": ""
+    }
+  ],
+  "answer_quality": [
+    {
+      "name": "Answer Correctness",
+      "value": 70.0,
+      "unit": "%"
+    },
+    {
+      "name": "Answer Faithfulness",
+      "value": 100.0,
+      "unit": "%"
+    },
+    {
+      "name": "Correct Answers",
+      "value": 7,
+      "unit": "/10"
+    },
+    {
+      "name": "Hallucination Rate",
+      "value": 0.0,
+      "unit": "%"
+    }
+  ],
+  "performance": [
+    {
+      "name": "Avg Query Latency",
+      "value": 3.4558144569396974,
+      "unit": "seconds"
+    },
+    {
+      "name": "Min Query Latency",
+      "value": 0.814842700958252,
+      "unit": "seconds"
+    },
+    {
+      "name": "Max Query Latency",
+      "value": 6.013331890106201,
+      "unit": "seconds"
+    },
+    {
+      "name": "P95 Query Latency",
+      "value": 6.013331890106201,
+      "unit": "seconds"
+    },
+    {
+      "name": "Health Check Latency",
+      "value": 0.005473136901855469,
+      "unit": "seconds"
+    }
+  ],
+  "isolation": [
+    {
+      "name": "Namespace Filtering Possible",
+      "value": 100.0,
+      "unit": "%"
+    },
+    {
+      "name": "Multi-User Data Separable",
+      "value": 100.0,
+      "unit": "%"
+    }
+  ]
+}
