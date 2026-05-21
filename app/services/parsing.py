@@ -31,7 +31,7 @@ class DocumentParser:
         if suffix in {".txt", ".md"}:
             text = file_path.read_text(encoding="utf-8", errors="ignore")
         elif suffix == ".pdf":
-            text = self._parse_pdf(file_path)
+            text = self._parse_pdf_text_only(file_path)
         elif suffix == ".docx":
             text = self._parse_docx(file_path)
         else:
@@ -53,7 +53,7 @@ class DocumentParser:
         image = Image.open(file_path)
         return pytesseract.image_to_string(image)
 
-    def _parse_pdf(self, file_path: Path) -> str:
+    def _parse_pdf_text_only(self, file_path: Path) -> str:
         doc = fitz.open(file_path)
         pages: list[str] = []
 
@@ -61,13 +61,6 @@ class DocumentParser:
             page_text = page.get_text("text").strip()
             if page_text:
                 pages.append(page_text)
-                continue
-
-            pix = page.get_pixmap(dpi=200)
-            image = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            ocr_text = pytesseract.image_to_string(image).strip()
-            if ocr_text:
-                pages.append(ocr_text)
 
         doc.close()
         return "\n\n".join(pages)
